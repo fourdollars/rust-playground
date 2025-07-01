@@ -12,6 +12,8 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 name = "benchmark"
 version = "0.1.0"
 dependencies = [
+ "cl-sys 0.2.1",
+ "libc",
  "ocl",
  "rand",
 ]
@@ -27,6 +29,15 @@ name = "cfg-if"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
+
+[[package]]
+name = "cl-sys"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de7f87e2d62c018c1f4d4830eb80f22ac95dedce28bf86aa10be8341ea7a142a"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "cl-sys"
@@ -179,7 +190,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c145dd9f205b86611a5df15eb89517417b03005441cf6cec245c65a4b9248c52"
 dependencies = [
  "bitflags",
- "cl-sys",
+ "cl-sys 0.4.3",
  "enum_primitive",
  "num-complex",
  "num-traits 0.2.19",

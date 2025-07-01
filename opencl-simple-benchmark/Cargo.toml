@@ -2,7 +2,10 @@
 name = "benchmark"
 version = "0.1.0"
 edition = "2024"
+default-run = "benchmark"
 
 [dependencies]
 ocl = "0.19"
+cl-sys = "0.2"
+libc = "0.2"
 rand = "0.8"
