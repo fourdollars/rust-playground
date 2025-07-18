@@ -183,10 +183,7 @@ int main() {
         std::string platformName;
         platform.getInfo(CL_PLATFORM_NAME, &platformName);
 
-        // Add the long separator ONLY before the NVIDIA CUDA platform
-        if (platformName.find("NVIDIA CUDA") != std::string::npos && platformIdx > 0) {
-            std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
-        }
+        std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 
         std::string platformVersion;
         platform.getInfo(CL_PLATFORM_VERSION, &platformVersion);

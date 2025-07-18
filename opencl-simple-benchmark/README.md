@@ -5,43 +5,47 @@
 ```bash
 $ g++ -o benchmark_cc benchmark.cc -lOpenCL && ./benchmark_cc
 --- Discovered OpenCL Platforms and Devices ---
-Platform 0: Portable Computing Language (Version: OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG)
-  Device 0: cpu-skylake-avx512-AMD Ryzen 7 PRO 7840HS w/ Radeon 780M Graphics (Type: CPU)
---- Benchmarking Device: cpu-skylake-avx512-AMD Ryzen 7 PRO 7840HS w/ Radeon 780M Graphics (Platform: Portable Computing Language) ---
 
---- Benchmark Results (1048576 elements) ---
-Data Size: 4 MB
-Write A (Host -> Device): 2.32608 ms
-Write B (Host -> Device): 2.77005 ms
-Kernel Execution Time:    0.715954 ms
-Read C (Device -> Host):  0.512719 ms
-Total Overall Time (measured by host clock): 6.68269 ms
-Result verification: PASSED (first 10 elements are correct)
-Platform 1: AMD Accelerated Parallel Processing (Version: OpenCL 2.1 AMD-APP (3649.0))
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Platform 0: AMD Accelerated Parallel Processing (Version: OpenCL 2.1 AMD-APP (3649.0))
   Device 0: gfx1103 (Type: GPU)
 --- Benchmarking Device: gfx1103 (Platform: AMD Accelerated Parallel Processing) ---
 
 --- Benchmark Results (1048576 elements) ---
 Data Size: 4 MB
-Write A (Host -> Device): 0.178418 ms
-Write B (Host -> Device): 0.175453 ms
-Kernel Execution Time:    0.20579 ms
-Read C (Device -> Host):  0.406711 ms
-Total Overall Time (measured by host clock): 2.39267 ms
+Write A (Host -> Device): 0.181164 ms
+Write B (Host -> Device): 0.175193 ms
+Kernel Execution Time:    0.174913 ms
+Read C (Device -> Host):  0.296581 ms
+Total Overall Time (measured by host clock): 2.80076 ms
 Result verification: PASSED (first 10 elements are correct)
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Platform 2: NVIDIA CUDA (Version: OpenCL 3.0 CUDA 12.8.97)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Platform 1: NVIDIA CUDA (Version: OpenCL 3.0 CUDA 12.9.90)
   Device 0: NVIDIA RTX A500 Laptop GPU (Type: GPU)
 --- Benchmarking Device: NVIDIA RTX A500 Laptop GPU (Platform: NVIDIA CUDA) ---
 
 --- Benchmark Results (1048576 elements) ---
 Data Size: 4 MB
-Write A (Host -> Device): 0.75632 ms
-Write B (Host -> Device): 0.646944 ms
-Kernel Execution Time:    0.124928 ms
-Read C (Device -> Host):  0.553792 ms
-Total Overall Time (measured by host clock): 3.01083 ms
+Write A (Host -> Device): 0.50752 ms
+Write B (Host -> Device): 0.476448 ms
+Kernel Execution Time:    0.12288 ms
+Read C (Device -> Host):  0.349088 ms
+Total Overall Time (measured by host clock): 1.96069 ms
+Result verification: PASSED (first 10 elements are correct)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Platform 2: Portable Computing Language (Version: OpenCL 3.0 PoCL 5.0+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 16.0.6, SLEEF, DISTRO, POCL_DEBUG)
+  Device 0: cpu-skylake-avx512-AMD Ryzen 7 PRO 7840HS w/ Radeon 780M Graphics (Type: CPU)
+--- Benchmarking Device: cpu-skylake-avx512-AMD Ryzen 7 PRO 7840HS w/ Radeon 780M Graphics (Platform: Portable Computing Language) ---
+
+--- Benchmark Results (1048576 elements) ---
+Data Size: 4 MB
+Write A (Host -> Device): 1.55605 ms
+Write B (Host -> Device): 1.53861 ms
+Kernel Execution Time:    0.529754 ms
+Read C (Device -> Host):  0.254307 ms
+Total Overall Time (measured by host clock): 4.14077 ms
 Result verification: PASSED (first 10 elements are correct)
 ```
 
