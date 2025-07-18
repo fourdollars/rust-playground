@@ -72,12 +72,26 @@ fn get_platform_info(platform: cl_platform_id, param_name: cl_platform_info) -> 
         clGetPlatformInfo(platform, param_name, 0, ptr::null_mut(), &mut size);
     }
 
-    let mut result = vec![0; size];
-    unsafe {
-        clGetPlatformInfo(platform, param_name, size, result.as_mut_ptr() as *mut c_void, ptr::null_mut());
+    if size == 0 {
+        return String::new();
     }
 
-    String::from_utf8(result.iter().map(|&c| c as u8).collect()).unwrap_or_default()
+    let mut result = vec![0u8; size];
+    unsafe {
+        clGetPlatformInfo(
+            platform,
+            param_name,
+            size,
+            result.as_mut_ptr() as *mut c_void,
+            ptr::null_mut(),
+        );
+    }
+
+    if let Some(pos) = result.iter().position(|&x| x == 0) {
+        result.truncate(pos);
+    }
+
+    String::from_utf8(result).unwrap_or_default()
 }
 
 fn get_devices(platform: cl_platform_id, device_type: cl_device_type) -> Vec<cl_device_id> {
@@ -100,12 +114,26 @@ fn get_device_info(device: cl_device_id, param_name: cl_device_info) -> String {
         clGetDeviceInfo(device, param_name, 0, ptr::null_mut(), &mut size);
     }
 
-    let mut result = vec![0; size];
-    unsafe {
-        clGetDeviceInfo(device, param_name, size, result.as_mut_ptr() as *mut c_void, ptr::null_mut());
+    if size == 0 {
+        return String::new();
     }
 
-    String::from_utf8(result.iter().map(|&c| c as u8).collect()).unwrap_or_default()
+    let mut result = vec![0u8; size];
+    unsafe {
+        clGetDeviceInfo(
+            device,
+            param_name,
+            size,
+            result.as_mut_ptr() as *mut c_void,
+            ptr::null_mut(),
+        );
+    }
+
+    if let Some(pos) = result.iter().position(|&x| x == 0) {
+        result.truncate(pos);
+    }
+
+    String::from_utf8(result).unwrap_or_default()
 }
 
 fn get_device_info_raw<T>(device: cl_device_id, param_name: cl_device_info) -> T {
