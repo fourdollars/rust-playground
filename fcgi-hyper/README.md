@@ -7,9 +7,9 @@
 - **Standalone HTTP Server:** Listens on a specified address and port, handling HTTP requests directly using `hyper`.
 - **FastCGI Application (Unix Socket):** Listens on a Unix socket for requests from a FastCGI spawner.
 - **FastCGI Application (Standard Input):** Reads FastCGI requests from standard input, suitable for process managers.
-- **Unified Application Logic:** The core request handling logic is implemented as a `hyper` service, which is used by both the HTTP and FastCGI frontends.
-- **Request Translation:** Incoming FastCGI requests are translated into standard `http::Request` objects before being passed to the application logic. The resulting `http::Response` is then translated back into a FastCGI response.
-- **Detailed Response:** Like `fcgi-app`, it provides a detailed response including request information, headers, and all process environment variables.
+- **Unified Request Handling Logic:** The core request processing logic is now fully unified into a single `hyper`-compatible service function (`unified_service`). This function is responsible for generating the detailed response, regardless of whether the request originated from the HTTP server or the FastCGI interface.
+- **Request Translation:** Incoming FastCGI requests are translated into standard `http::Request` objects before being passed to the unified application logic. The resulting `http::Response` is then translated back into a FastCGI response.
+- **Detailed Response:** Provides a detailed response including request information, headers, and all process environment variables.
 
 ## Building the Application
 

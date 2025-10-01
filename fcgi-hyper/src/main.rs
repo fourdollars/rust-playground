@@ -30,17 +30,27 @@ fn capitalize_header_name(name: &str) -> String {
         .join("-")
 }
 
-// Shared core logic to build a response from request parts.
-fn build_response_from_parts(parts: Parts, remote_addr: String) -> Result<Response<Full<Bytes>>, Infallible> {
-    let mut body = String::new();
+// Unified service function to handle requests from different sources.
+async fn unified_service<B>(req: Request<B>) -> Result<Response<Full<Bytes>>, Infallible>
+where
+    B: hyper::body::Body,
+{
+    let remote_addr = req
+        .extensions()
+        .get::<String>()
+        .cloned()
+        .unwrap_or_else(|| "Unknown".to_string());
 
-    body.push_str("--- Request Details ---\r\n");
-    body.push_str(&format!("Method: {}\r\n", parts.method));
-    body.push_str(&format!("URI: {}\r\n", parts.uri));
-    body.push_str(&format!("Version: {:?}\r\n", parts.version));
-    body.push_str(&format!("Remote Address: {}\r\n", remote_addr));
+    let (parts, _body) = req.into_parts();
+    let mut body_str = String::new();
 
-    body.push_str("\r\n--- HTTP Headers ---\r\n");
+    body_str.push_str("--- Request Details ---\r\n");
+    body_str.push_str(&format!("Method: {}\r\n", parts.method));
+    body_str.push_str(&format!("URI: {}\r\n", parts.uri));
+    body_str.push_str(&format!("Version: {:?}\r\n", parts.version));
+    body_str.push_str(&format!("Remote Address: {}\r\n", remote_addr));
+
+    body_str.push_str("\r\n--- HTTP Headers ---\r\n");
     let mut sorted_headers = BTreeMap::new();
     for (name, value) in &parts.headers {
         let canonical_name = capitalize_header_name(name.as_str());
@@ -52,32 +62,26 @@ fn build_response_from_parts(parts: Parts, remote_addr: String) -> Result<Respon
 
     for (name, values) in sorted_headers {
         for value in values {
-            body.push_str(&format!("{}: {}\r\n", name, value));
+            body_str.push_str(&format!("{}: {}\r\n", name, value));
         }
     }
 
-    body.push_str("\r\n--- Process Environment Variables ---\r\n");
+    body_str.push_str("\r\n--- Process Environment Variables ---\r\n");
     let mut env_vars: Vec<String> = std::env::vars()
         .map(|(key, value)| format!("{}={}", key, value))
         .collect();
     env_vars.sort();
     for env_var in env_vars {
-        body.push_str(&format!("{}\r\n", env_var));
+        body_str.push_str(&format!("{}\r\n", env_var));
     }
 
     let response = Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/plain")
-        .body(Full::new(Bytes::from(body)))
+        .body(Full::new(Bytes::from(body_str)))
         .unwrap();
 
     Ok(response)
-}
-
-// Hyper service function for the HTTP server.
-async fn app_service(req: Request<Incoming>, remote_addr: SocketAddr) -> Result<Response<Full<Bytes>>, Infallible> {
-    let (parts, _) = req.into_parts();
-    build_response_from_parts(parts, remote_addr.to_string())
 }
 
 #[derive(Parser, Debug)]
@@ -119,8 +123,9 @@ async fn run_http(addr_str: String) {
         let io = TokioIo::new(stream);
 
         tokio::task::spawn(async move {
-            let service = service_fn(move |req: Request<Incoming>| {
-                app_service(req, remote_addr)
+            let service = service_fn(move |mut req: Request<Incoming>| {
+                req.extensions_mut().insert(remote_addr.to_string());
+                unified_service(req)
             });
 
             if let Err(err) = http1::Builder::new().serve_connection(io, service).await {
@@ -142,7 +147,11 @@ where
     }
 
     let (http_parts, remote_addr) = fcgi_params_to_http_parts(&params);
-    let http_res = build_response_from_parts(http_parts, remote_addr).unwrap();
+
+    let mut req = Request::from_parts(http_parts, Full::new(Bytes::new()));
+    req.extensions_mut().insert(remote_addr);
+
+    let http_res = unified_service(req).await.unwrap();
     let (parts, body) = http_res.into_parts();
     let body_bytes = body.collect().await.unwrap().to_bytes();
 
