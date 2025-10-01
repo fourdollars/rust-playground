@@ -1,10 +1,12 @@
 use clap::Parser;
+use http::request::Parts;
 use http_body_util::{BodyExt, Full};
 use hyper::body::{Bytes, Incoming};
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
+use hyper_util::rt::TokioIo;
 use log::{error, info};
 use std::collections::{BTreeMap, HashMap};
 use std::convert::Infallible;
@@ -12,8 +14,6 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use tokio::net::{TcpListener, UnixListener};
 use tokio_fastcgi::Requests;
-use http::request::Parts;
-use hyper_util::rt::TokioIo;
 
 // Re-implement the header capitalization logic from fcgi-app
 fn capitalize_header_name(name: &str) -> String {
@@ -135,7 +135,7 @@ async fn run_http(addr_str: String) {
     }
 }
 
-async fn handle_fcgi_request<W>(request: tokio_fastcgi::Request<W>) -> Result<(), std::io::Error> 
+async fn handle_fcgi_request<W>(request: tokio_fastcgi::Request<W>) -> Result<(), std::io::Error>
 where
     W: tokio::io::AsyncWrite + Unpin,
 {
@@ -158,7 +158,11 @@ where
     let mut stdout = request.get_stdout();
     let mut headers_str = format!("Status: {}\r\n", parts.status.as_u16());
     for (name, value) in parts.headers.iter() {
-        headers_str.push_str(&format!("{}: {}\r\n", name.as_str(), value.to_str().unwrap()));
+        headers_str.push_str(&format!(
+            "{}: {}\r\n",
+            name.as_str(),
+            value.to_str().unwrap()
+        ));
     }
     headers_str.push_str("\r\n");
 
@@ -191,7 +195,7 @@ async fn run_fcgi(socket_path: Option<PathBuf>) {
                     let mut requests = Requests::from_split_socket((reader, writer), 10, 10);
                     while let Ok(Some(request)) = requests.next().await {
                         if let Err(err) = handle_fcgi_request(request).await {
-                             error!("Error processing FCGI request: {}", err);
+                            error!("Error processing FCGI request: {}", err);
                         }
                     }
                 });
@@ -204,42 +208,63 @@ async fn run_fcgi(socket_path: Option<PathBuf>) {
         let mut requests = Requests::from_split_socket((stdin, stdout), 10, 10);
         while let Ok(Some(request)) = requests.next().await {
             if let Err(err) = handle_fcgi_request(request).await {
-                 error!("Error processing FCGI request: {}", err);
+                error!("Error processing FCGI request: {}", err);
             }
         }
     }
 }
 
 fn fcgi_params_to_http_parts(params: &HashMap<Vec<u8>, Vec<u8>>) -> (Parts, String) {
-    let method = params.get("REQUEST_METHOD".as_bytes()).and_then(|v| std::str::from_utf8(v).ok()).unwrap_or("GET");
-    let uri = params.get("REQUEST_URI".as_bytes()).and_then(|v| std::str::from_utf8(v).ok()).unwrap_or("/");
+    let method = params
+        .get(&b"request_method"[..])
+        .and_then(|v| std::str::from_utf8(v).ok())
+        .unwrap_or("GET");
+    let uri = params
+        .get(&b"request_uri"[..])
+        .and_then(|v| std::str::from_utf8(v).ok())
+        .unwrap_or("/");
     let mut builder = Request::builder().method(method).uri(uri);
 
     if let Some(headers) = builder.headers_mut() {
         for (name, value) in params {
-            if name.starts_with(b"HTTP_") {
-                if let Ok(header_name) = HeaderName::from_bytes(&name[5..]) {
-                    if let Ok(header_value) = HeaderValue::from_bytes(value) {
-                        headers.insert(header_name, header_value);
+            if let Ok(key_str) = std::str::from_utf8(name) {
+                if key_str.starts_with("http_") {
+                    let header_name_str = key_str[5..].replace("_", "-");
+                    let header_name_str = capitalize_header_name(&header_name_str);
+
+                    if let Ok(header_name) = HeaderName::from_bytes(header_name_str.as_bytes()) {
+                        if let Ok(header_value) = HeaderValue::from_bytes(value) {
+                            headers.insert(header_name, header_value);
+                        }
                     }
                 }
             }
         }
     }
-    
+
     let remote_addr_str = format!(
         "{}:{}",
-        params.get("REMOTE_ADDR".as_bytes()).and_then(|v| std::str::from_utf8(v).ok()).unwrap_or(""),
-        params.get("REMOTE_PORT".as_bytes()).and_then(|v| std::str::from_utf8(v).ok()).unwrap_or("")
+        params
+            .get(&b"remote_addr"[..])
+            .and_then(|v| std::str::from_utf8(v).ok())
+            .unwrap_or(""),
+        params
+            .get(&b"remote_port"[..])
+            .and_then(|v| std::str::from_utf8(v).ok())
+            .unwrap_or("")
     );
 
     let (parts, _) = builder.body(()).unwrap().into_parts();
+    info!(
+        "HTTP Parts generated from FCGI: method={:?}, uri={:?}, headers={:?}",
+        parts.method, parts.uri, parts.headers
+    );
     (parts, remote_addr_str)
 }
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let args = Args::parse();
 
     if let Some(addr_str) = args.http {
