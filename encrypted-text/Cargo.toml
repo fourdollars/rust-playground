@@ -8,4 +8,4 @@ aes-gcm = "0.10.3"
 base64 = "0.22.1"
 pkcs8 = { version = "0.10.2", features = ["pem"] }
 rand_core = "0.6.4"
-rsa = { version = "0.9.8", features = ["pem"] }
+rsa = { version = "0.9.10", features = ["pem"] }
